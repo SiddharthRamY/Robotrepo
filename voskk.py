@@ -44,6 +44,7 @@ def start_voice_thread():
     global voice_thread
     if not voice_thread_running[0]:
         voice_stop_flag[0] = False
+        voice_output["text"] = ""  # Clear previous output
         voice_thread = threading.Thread(
             target=start_voice_recognition,
             args=(voice_output, voice_thread_running, voice_stop_flag)
@@ -51,5 +52,7 @@ def start_voice_thread():
         voice_thread.daemon = True
         voice_thread.start()
 
+
 def stop_voice_thread():
+    # Set the stop flag to True to signal the thread to exit
     voice_stop_flag[0] = True
