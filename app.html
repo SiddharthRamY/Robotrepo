@@ -16,13 +16,35 @@
         </div>
         <!-- Middle Column: Speed and Robot State (Centered) -->
         <div class="panel">
+            <!-- Lidar Simulation Form -->
+            <form method="post" style="margin-bottom: 18px;">
+                <label for="front">Front (cm):</label>
+                <input type="number" id="front" name="front" required>
+                <label for="left">Left (cm):</label>
+                <input type="number" id="left" name="left" required>
+                <label for="right">Right (cm):</label>
+                <input type="number" id="right" name="right" required>
+                <button type="submit">Simulate</button>
+            </form>
             <h2>Speed</h2>
-            <div class="box small-box">
-                <p>--</p>
+            <div class="box small-box" id="speed-box">
+                <p>
+                    {% if result %}
+                        {{ result.speed }}
+                    {% else %}
+                        --
+                    {% endif %}
+                </p>
             </div>
             <h2 style="margin-top: 18px;">Robot State</h2>
-            <div class="box small-box">
-                <p>--</p>
+            <div class="box small-box" id="robot-state-box">
+                <p>
+                    {% if result %}
+                        {{ result.direction }}
+                    {% else %}
+                        --
+                    {% endif %}
+                </p>
             </div>
         </div>
         <!-- Webcam Box (Right) -->
@@ -32,6 +54,58 @@
                 <img src="{{ url_for('video_feed') }}" style="width:100%; height:100%; object-fit:cover;" alt="Live Webcam Feed">
             </div>
         </div>
+        <!-- Voice Recognition Box -->
+        <div class="panel">
+            <h2>Voice Recognition</h2>
+            <div class="box wide-box" id="voice-box">
+                <div style="width:100%;">
+                    <div style="margin-bottom:12px;">
+                        <span>Do you want to start voice recognition?</span>
+                        <button id="voice-yes-btn" class="voice-choice-btn">y</button>
+                        <button id="voice-no-btn" class="voice-choice-btn">n</button>
+                    </div>
+                    <div id="voice-output" style="font-size:1.2em; color:#FFFFFF; min-height:32px;"></div>
+                </div>
+            </div>
+        </div>
     </div>
+    <script>
+        let voiceStarted = false;
+        let pollInterval = null;
+
+        document.getElementById('voice-yes-btn').onclick = function() {
+            if (!voiceStarted) {
+                fetch('/start_voice_recognition', {method: 'POST'})
+                    .then(response => response.json())
+                    .then(data => {
+                        voiceStarted = true;
+                        pollVoiceOutput();
+                    });
+            }
+        };
+
+        document.getElementById('voice-no-btn').onclick = function() {
+            fetch('/stop_voice_recognition', {method: 'POST'})
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('voice-output').textContent = "Voice recognition stopped.";
+                    voiceStarted = false;
+                    if (pollInterval) {
+                        clearInterval(pollInterval);
+                        pollInterval = null;
+                    }
+                });
+        };
+
+        function pollVoiceOutput() {
+            pollInterval = setInterval(function() {
+                fetch('/get_voice_output')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('voice-output').textContent = data.text || "";
+                    });
+            }, 1000);
+        }
+    </script>
 </body>
 </html>
