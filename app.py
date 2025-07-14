@@ -1,9 +1,11 @@
-from flask import Flask, render_template, Response, jsonify, request
+from flask import Flask, render_template, Response, request, jsonify, send_from_directory
 from camera import VideoCamera
 from voskk import voice_output, start_voice_thread, stop_voice_thread
 from simulation import collision_avoidance_lidar
+import os
 
 app = Flask(__name__)
+camera_instance = VideoCamera()  # Shared camera instance
 
 @app.route('/')
 def home():
@@ -11,8 +13,7 @@ def home():
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(gen(VideoCamera()),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(gen(camera_instance), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 def gen(camera):
     while True:
@@ -46,6 +47,20 @@ def index():
         result = collision_avoidance_lidar(front, left, right)
     return render_template('app.html', result=result)
 
-if __name__ == "__main__":
-    app.run(debug=True)
+@app.route('/set_confidence', methods=['POST'])
+def set_confidence():
+    try:
+        threshold = float(request.form.get('threshold', 0.25))
+        camera_instance.set_confidence_threshold(threshold)
+        return '', 204
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
+@app.route('/screenshot', methods=['POST'])
+def screenshot():
+    filename = camera_instance.capture_screenshot()
+    return jsonify(success=bool(filename))
+
+@app.route('/download/<filename>')
+def download(filename):
+    return send_from_directory('screenshots', filename)
