@@ -23,10 +23,6 @@ def gen(camera):
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
-@app.route('/get_voice_output')
-def get_voice_output():
-    return jsonify(voice_output)
-
 @app.route('/start_voice_recognition', methods=['POST'])
 def start_voice():
     start_voice_thread()
@@ -36,6 +32,10 @@ def start_voice():
 def stop_voice():
     stop_voice_thread()
     return jsonify({"status": "stopping"})
+
+@app.route('/get_voice_output')
+def get_voice_output():
+    return jsonify(voice_output)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -64,3 +64,6 @@ def screenshot():
 @app.route('/download/<filename>')
 def download(filename):
     return send_from_directory('screenshots', filename)
+
+if __name__ == "__main__":
+    app.run(debug=True)
